@@ -7,13 +7,13 @@ const int dataLength = 10;
 const int inputDelay = 100;
 const int* pins = new int[4] { 2, 3, 4, 6 };
 
-const float devMax = 30;
-const float weightThresh = 1;
+const int devMax = 30;
+const int weightThresh = 1;
 
-float** data = new float*[4] { new float[dataLength], new float[dataLength],
-        new float[dataLength], new float[dataLength] };
-float* means = new float[4];
-float* devs = new float[4];
+int** data = new int*[4] { new int[dataLength], new int[dataLength],
+        new int[dataLength], new int[dataLength] };
+int* means = new int[4];
+int* devs = new int[4];
 char* outData = new char[4];
 int* tempData = new int[4];
 
@@ -27,7 +27,7 @@ volatile int startTime = 0;
 int cycle = 0;
 int cyclePos = 0;
 const int cycleLength = 7;
-float* cycleData = new float[4];
+int* cycleData = new int[4];
 
 const int*** cycles = new const int**[2] { new const int*[cycleLength] {
         new const int[4] { 0, 0, 1, 0 }, new const int[4] { 0, 2, 1, 0 },
@@ -41,25 +41,21 @@ const int*** cycles = new const int**[2] { new const int*[cycleLength] {
 const int** cycleDataLengths = new const int*[2] {
         new const int[4] { 2, 3, 2, 3 }, new const int[4] { 3, 2, 3, 2 } };
 
-float convertWeight(int rawData) {
-    return (float) rawData * 105.0 / 96.0;
-}
-
-float sum(float* input) {
-    float total = 0;
+int sum(int* input) {
+    int total = 0;
     for (int i = 0; i < dataLength; i++) {
         total += input[i];
     }
     return total;
 }
 
-float mean(float* input) {
+int mean(int* input) {
     return sum(input) / dataLength;
 }
 
-float standardDev(float* inputData, float mean) {
-    float total = 0;
-    float difference;
+int standardDev(int* inputData, int mean) {
+    int total = 0;
+    int difference;
     for (int i = 0; i < dataLength; i++) {
         difference = inputData[i] - mean;
         difference *= difference;
@@ -69,19 +65,19 @@ float standardDev(float* inputData, float mean) {
 }
 
 void sendData() {
-    SimbleeCOM.send(outData, 4);
+    SimbleeCOM.send(outData, 8);
 }
 
-void convertData(float* data) {
+void convertData(int* data) {
     for (int i = 0; i < 4; i++) {
         tempData[i] = (int) data[i];
-        for (int j = 0; j < 4; j++) {
-            outData[i * 4 + j] = (tempData[i] >> (24 - j * 8)) & 0xFF;
+        for (int j = 0; j < 2; j++) {
+            outData[i * 2 + j] = (tempData[i] >> (8 - j * 8)) & 0xFF;
         }
     }
 }
 
-void getCycle(float* data) {
+void getCycle(int* data) {
     if (data[2] > weightThresh && data[3] < weightThresh) {
         cycle = 0;
     } else if (data[3] > weightThresh && data[2] < weightThresh) {
@@ -89,7 +85,7 @@ void getCycle(float* data) {
     }
 }
 
-void calcData(float* data) {
+void calcData(int* data) {
     for (int i = 0; i < 4; i++) {
         if (abs(data[i]) < weightThresh) {
             data[i] = 0;
@@ -126,7 +122,7 @@ void getData() {
     prevFlag = flag;
     flag = false;
     for (int i = 0; i < 4; i++) {
-        data[i][pos] = convertWeight(analogRead(pins[i]));
+        data[i][pos] = analogRead(pins[i]);
         means[i] = mean(data[i]);
         devs[i] = standardDev(data[i], means[i]);
         if (devs[i] > devMax) {
@@ -155,7 +151,7 @@ void loop() {
     outputData();
 
 #ifdef debug
-    Serial.println(millis() - startTime);
+    Serial.println("%d        \r", means[1]);
 #endif
 
     delay(inputDelay);

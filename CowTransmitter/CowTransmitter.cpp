@@ -7,12 +7,12 @@ const int dataLength = 10;
 const int inputDelay = 100;
 const int* pins = new int[4] { 2, 3, 4, 6 };
 
-const float devMax = 30;
+const int devMax = 30;
 
-float** data = new float*[4] { new float[dataLength], new float[dataLength],
-        new float[dataLength], new float[dataLength] };
-float* means = new float[4];
-float* devs = new float[4];
+int** data = new int*[4] { new int[dataLength], new int[dataLength],
+        new int[dataLength], new int[dataLength] };
+int* means = new int[4];
+int* devs = new int[4];
 char* outData = new char[4];
 int* tempData = new int[4];
 
@@ -22,25 +22,21 @@ volatile bool flag = false;
 
 volatile int startTime = 0;
 
-float convertWeight(int rawData) {
-    return (float) rawData * 105.0 / 96.0;
-}
-
-float sum(float* input) {
-    float total = 0;
+int sum(int* input) {
+    int total = 0;
     for (int i = 0; i < dataLength; i++) {
         total += input[i];
     }
     return total;
 }
 
-float mean(float* input) {
+int mean(int* input) {
     return sum(input) / dataLength;
 }
 
-float standardDev(float* inputData, float mean) {
-    float total = 0;
-    float difference;
+int standardDev(int* inputData, int mean) {
+    int total = 0;
+    int difference;
     for (int i = 0; i < dataLength; i++) {
         difference = inputData[i] - mean;
         difference *= difference;
@@ -50,14 +46,14 @@ float standardDev(float* inputData, float mean) {
 }
 
 void sendData() {
-    SimbleeCOM.send(outData, 4);
+    SimbleeCOM.send(outData, 8);
 }
 
-void convertData(float* data) {
+void convertData(int* data) {
     for (int i = 0; i < 4; i++) {
         tempData[i] = (int) data[i];
-        for (int j = 0; j < 4; j++) {
-            outData[i * 4 + j] = (tempData[i] >> (24 - j * 8)) & 0xFF;
+        for (int j = 0; j < 2; j++) {
+            outData[i * 2 + j] = (tempData[i] >> (8 - j * 8)) & 0xFF;
         }
     }
 }
@@ -72,7 +68,7 @@ void outputData() {
 void getData() {
     flag = false;
     for (int i = 0; i < 4; i++) {
-        data[i][pos] = convertWeight(analogRead(pins[i]));
+        data[i][pos] = analogRead(pins[i]);
         means[i] = mean(data[i]);
         devs[i] = standardDev(data[i], means[i]);
         if (devs[i] > devMax) {
@@ -101,7 +97,7 @@ void loop() {
     outputData();
 
 #ifdef debug
-    Serial.println(millis() - startTime);
+    Serial.printf("%d        \r", means[1]);
 #endif
 
     delay(inputDelay);
