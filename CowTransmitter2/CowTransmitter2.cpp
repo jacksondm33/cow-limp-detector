@@ -3,11 +3,13 @@
 
 //#define debug
 
-const int dataLength = 10;
-const int inputDelay = 100;
-const int* pins = new int[4] { 2, 3, 4, 6 };
+// FL, FR, BL, BR
 
-const int devMax = 30;
+const int dataLength = 8;
+const int inputDelay = 50;
+const int* pins = new int[4] { 3, 4, 2, 6 };
+
+const int devMax = 10;
 const int weightThresh = 1;
 
 int** data = new int*[4] { new int[dataLength], new int[dataLength],
@@ -64,19 +66,6 @@ int standardDev(int* inputData, int mean) {
     return sqrt(total / dataLength);
 }
 
-void sendData() {
-    SimbleeCOM.send(outData, 8);
-}
-
-void convertData(int* data) {
-    for (int i = 0; i < 4; i++) {
-        tempData[i] = (int) data[i];
-        for (int j = 0; j < 2; j++) {
-            outData[i * 2 + j] = (tempData[i] >> (8 - j * 8)) & 0xFF;
-        }
-    }
-}
-
 void getCycle(int* data) {
     if (data[2] > weightThresh && data[3] < weightThresh) {
         cycle = 0;
@@ -92,6 +81,19 @@ void calcData(int* data) {
         }
         if (cycles[cycle][pos][i] > 0) {
             cycleData[cycles[cycle][cyclePos][i] - 1] += data[i];
+        }
+    }
+}
+
+void sendData() {
+    SimbleeCOM.send(outData, 8);
+}
+
+void convertData(int* data) {
+    for (int i = 0; i < 4; i++) {
+        tempData[i] = (int) data[i];
+        for (int j = 0; j < 2; j++) {
+            outData[i * 2 + j] = (tempData[i] >> (8 - j * 8)) & 0xFF;
         }
     }
 }
@@ -119,7 +121,6 @@ void outputData() {
 }
 
 void getData() {
-    prevFlag = flag;
     flag = false;
     for (int i = 0; i < 4; i++) {
         data[i][pos] = analogRead(pins[i]);
@@ -151,7 +152,7 @@ void loop() {
     outputData();
 
 #ifdef debug
-    Serial.println("%d        \r", means[1]);
+    Serial.printf("%d\n", means[1]);
 #endif
 
     delay(inputDelay);

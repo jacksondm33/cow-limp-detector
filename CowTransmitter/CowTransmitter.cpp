@@ -3,9 +3,11 @@
 
 //#define debug
 
-const int dataLength = 10;
-const int inputDelay = 100;
-const int* pins = new int[4] { 2, 3, 4, 6 };
+// FL, FR, BL, BR
+
+const int dataLength = 8;
+const int inputDelay = 50;
+const int* pins = new int[4] { 3, 4, 2, 6 };
 
 const int devMax = 30;
 
@@ -97,7 +99,10 @@ void loop() {
     outputData();
 
 #ifdef debug
-    Serial.printf("%d        \r", means[1]);
+    for (int i = 0; i < 4; i++) {
+        Serial.printf("%d ", means[i]);
+    }
+    Serial.printf("\n");
 #endif
 
     delay(inputDelay);
